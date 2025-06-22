@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Summarization Tool</title>
+  <style>
+        body {
+      font-family: 'Georgia', serif;
+      background-color: #fff8dc;
+      color: #5a4b00;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      max-width: 900px;
+      margin: 30px auto;
+      background-color: #fff3b0;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    h1 {
+      text-align: center;
+      color: #d4a017;
+      margin-bottom: 20px;
+    }
+    p.info-text {
+      font-size: 16px;
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 0 20px;
+    }
+    label.section-label {
+      display: block;
+      margin-top: 30px;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .upload-area {
+      padding: 30px;
+      border: 2px dashed #d4a017;
+      border-radius: 10px;
+      background-color: #f1eede;
+      text-align: center;
+      color: #5a4b00;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .upload-area.dragover {
+      background-color: #ffe066;
+      border-color: #e0b000;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .checkbox-group {
+      margin-top: 20px;
+      display: flex;
+      align-items: center;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      appearance: none;
+      background-color: #fff;
+      border: 2px solid #d4a017;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+      position: relative;
+    }
+    .checkbox-group input[type="checkbox"]:checked::after {
+      content: '✔';
+      color: #fff;
+      font-size: 18px;
+      position: absolute;
+      left: 3px;
+      top: -2px;
+    }
+    .checkbox-group input[type="checkbox"]:checked {
+      background-color: #d4a017;
+    }
+    .checkbox-group label {
+      margin-left: 10px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #d4a017;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background-color: #c49b07;
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    .result-section {
+      margin-top: 40px;
+    }
+    #result, #classificationResult {
+      width: 100%;
+      border: 2px solid #d4a017;
+      border-radius: 10px;
+      background-color: #f1eede;
+      padding: 10px;
+      font-size: 16px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    #result {
+      height: 200px;
+    }
+    #classificationResult {
+      height: 50px;
+    }
+    /* Scrollbar */
+    #result::-webkit-scrollbar, #classificationResult::-webkit-scrollbar {
+      width: 10px;
+    }
+    #result::-webkit-scrollbar-track, #classificationResult::-webkit-scrollbar-track {
+      background: #fffefa;
+      border-radius: 10px;
+    }
+    #result::-webkit-scrollbar-thumb, #classificationResult::-webkit-scrollbar-thumb {
+      background-color: #d4a017;
+      border-radius: 10px;
+    }
+    .button-group {
+      margin-top: -10px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-start;
+    }
+    /* Flower Spinner */
+    #spinner {
+      display: none;
+      margin: 20px auto;
+      width: 50px;
+      height: 50px;
+      border: 6px dotted #9919d4; 
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite, flower 2s ease-in-out infinite alternate;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    @keyframes flower {
+      0% { box-shadow: 0 0 0 0 #ca8edd; }
+      100% { box-shadow: 0 0 20px 10px #b78ac0; }
+    }
+    /* Modal */
+    #filenameModal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background-color: #fff8dc;
+      padding: 20px;
+      border: 2px solid #d4a017;
+      border-radius: 10px;
+      z-index: 1000;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    #filenameModal.show {
+      display: block;
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    #filenameModal input {
+      padding: 8px;
+      margin-top: 10px;
+      width: 80%;
+      border: 1px solid #d4a017;
+      border-radius: 5px;
+      background-color: #fffefa;
+      color: #5a4b00;
+    }
+    #filenameModal input:focus {
+      outline: none;
+      background-color: #fffefa;
+      color: #5a4b00;
+      border-color: #e0b000;
+    }
+    #filenameModal button {
+      margin-top: 10px;
+    }
+    /* Toast */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #d4a017;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1001;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 16px;
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;}
+      to {bottom: 30px; opacity: 1;}
+    }
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;}
+      to {bottom: 0; opacity: 0;}
+    }
+
+    /* Close button inside modal */
+    .close {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    color: #d4a017;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s, transform 0.3s;
+    }
+
+    .close:hover {
+    color: #c49b07; 
+    transform: scale(1.2); 
+    }
+    
+    #languageSwitcher {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    #languageSwitcher button {
+    padding: 6px 12px;
+    font-size: 14px;
+    border: 1px solid #d4a017;
+    background-color: transparent;
+    color: #5a4b00;
+    border-radius: 20px; 
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0;
+    }
+
+    #languageSwitcher button.active {
+        background-color: #d4a017;
+        color: white;
+        transform: none;
+    }
+
+    #languageSwitcher button:hover {
+        background-color: #fff3b0;
+        transform: none;
+    }
+
+    #result, #classificationResult {
+        width: 100%;
+        border: 2px solid #d4a017;
+        border-radius: 10px;
+        background-color: #fffefa; 
+        color: #5a4b00; 
+        padding: 10px;
+        font-size: 16px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin-top: 10px;
+        box-sizing: border-box;
+    }
+
+    /* Scrollbar */
+    #result::-webkit-scrollbar, #classificationResult::-webkit-scrollbar {
+    width: 10px;
+    }
+    #result::-webkit-scrollbar-track, #classificationResult::-webkit-scrollbar-track {
+    background: #fffefa;
+    border-radius: 10px;
+    }
+    #result::-webkit-scrollbar-thumb, #classificationResult::-webkit-scrollbar-thumb {
+    background-color: #d4a017;
+    border-radius: 10px;
+    }
+
+    /* File selection display */
+    #fileInfo {
+        margin-top: 10px;
+        padding: 8px;
+        background-color: #fff3b0;
+        border-radius: 5px;
+        display: none;
+    }
+
+    #fileName {
+        font-weight: bold;
+        color: #c49b07;
+    }
+
+    #removeFile {
+        margin-left: 10px;
+        color: #d4a017;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <div id="languageSwitcher">
+        <button onclick="setLanguage('hy')">AM</button>
+        <button onclick="setLanguage('en')">EN</button>
+        <button onclick="setLanguage('ru')">RU</button>
+    </div>
+
+  <h1 id="mainTitle">Summarization Tool</h1>
+
+  <p class="info-text" id="infoText">
+    This tool summarizes PDF files in Armenian, English, and Russian. 
+    The generated summary will be in the same language as the uploaded document.
+  </p>
+
+  <label class="section-label" id="uploadLabel">Upload PDF:</label>
+  <div class="upload-area" id="uploadArea">
+    <span id="uploadInstruction">Drag and drop your PDF here or</span> 
+    <label for="fileInput" id="browseLabel" style="color: #c49b07; text-decoration: underline; cursor: pointer;">Browse</label>
+    <input type="file" id="fileInput" accept="application/pdf">
+  </div>
+
+  <div id="fileInfo">
+    <span id="fileName"></span>
+    <span id="removeFile">×</span>
+  </div>
+
+  <div class="checkbox-group">
+    <input type="checkbox" id="classificationCheck">
+    <label for="classificationCheck" id="classificationLabel">Enable Classification</label>
+  </div>
+
+  <button id="summarizeButton" onclick="summarize()">Summarize</button>
+
+  <div id="spinner"></div>
+
+  <div class="result-section">
+    <label class="section-label" id="summaryLabel" for="result">Summary Result:</label>
+    <div id="result"></div>
+
+    <div class="button-group">
+      <button id="copyButton" onclick="copyText()">Copy</button>
+      <button id="downloadButton" onclick="downloadText()">Download</button>
+    </div>
+
+    <label class="section-label" id="classificationResultLabel" for="classificationResult">Classification Result:</label>
+    <div id="classificationResult"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="filenameModal">
+    <span class="close" id="closeFilenameModal">&times;</span>
+    <h3 id="filenameModalTitle">Enter Filename</h3>
+    <input type="text" id="filenameInput" placeholder="summary.txt">
+    <br>
+    <button id="saveButton" onclick="saveFilename()">Save</button>
+</div>  
+
+<!-- Toast -->
+<div id="toast">Summary copied to clipboard!</div>
+
+<script>
+  const uploadArea = document.getElementById('uploadArea');
+  const fileInput = document.getElementById('fileInput');
+  const spinner = document.getElementById('spinner');
+  const filenameModal = document.getElementById('filenameModal');
+  let downloadTextContent = '';
+
+  uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+  });
+
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+  });
+
+  uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+  });
+
+  function summarize() {
+    spinner.style.display = 'block';
+    document.getElementById('result').innerText = '';
+    document.getElementById('classificationResult').innerText = '';
+
+    setTimeout(() => {
+      spinner.style.display = 'none';
+      const classificationEnabled = document.getElementById('classificationCheck').checked;
+
+      document.getElementById('result').innerText = translations[currentLanguage].summaryResultText;
+      document.getElementById('classificationResult').innerText = classificationEnabled ? translations[currentLanguage].article : translations[currentLanguage].none;
+
+      downloadTextContent = document.getElementById('result').innerText;
+    }, 1500);
+  }
+
+  function copyText() {
+    const text = document.getElementById('result').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast();
+    });
+  }
+
+  function showToast() {
+    const toast = document.getElementById('toast');
+    toast.innerText = translations[currentLanguage].copied; // Change text dynamically
+    toast.className = "show";
+    setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+  }
+
+  function downloadText() {
+    filenameModal.style.display = 'block'; 
+    filenameModal.classList.add('show');
+  }
+
+  function saveFilename() {
+    const filename = document.getElementById('filenameInput').value.trim() || 'summary.txt';
+    
+    filenameModal.classList.remove('show');
+    setTimeout(() => { 
+      filenameModal.style.display = 'none'; 
+      document.getElementById('filenameInput').value = ''; 
+    }, 300);
+
+    const blob = new Blob([downloadTextContent], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename.endsWith('.txt') ? filename : filename + '.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const closeFilenameModal = document.getElementById('closeFilenameModal');
+
+  closeFilenameModal.onclick = function() {
+    filenameModal.classList.remove('show');
+    setTimeout(() => { 
+      filenameModal.style.display = 'none'; 
+      document.getElementById('filenameInput').value = ''; 
+    }, 300);
+  };
+
+  const translations = {
+    en: {
+      mainTitle: "Summarization Tool",
+      infoText: "This tool summarizes PDF files in Armenian, English, and Russian. The generated summary will be in the same language as the uploaded document.",
+      uploadLabel: "Upload PDF:",
+      uploadInstruction: "Drag and drop your PDF here or",
+      browse: "Browse",
+      classification: "Enable Classification",
+      summarize: "Summarize",
+      summaryResult: "Summary Result:",
+      classificationResult: "Classification Result:",
+      copy: "Copy",
+      download: "Download",
+      filenameTitle: "Enter Filename",
+      filenamePlaceholder: "summary.txt",
+      saveButton: "Save",
+      summaryResultText: "Here is the summarized content of the uploaded PDF.",
+      article: "Article",
+      none: "None",
+      copied: "Summary copied to clipboard!"
+    },
+    hy: {
+      mainTitle: "Ամփոփման Գործիք",
+      infoText: "Այս գործիքը ամփոփում է PDF ֆայլերը հայերեն, անգլերեն և ռուսերեն լեզուներով: Ստեղծված ամփոփագիրը կլինի նույն լեզվով, ինչ վերբեռնված փաստաթուղթը։",
+      uploadLabel: "Վերբեռնել PDF՝",
+      uploadInstruction: "Քաշեք և գցեք ձեր PDF-ը այստեղ կամ",
+      browse: "Ընտրել",
+      classification: "Միացնել Դասակարգումը",
+      summarize: "Ամփոփել",
+      summaryResult: "Ամփոփման Արդյունք՝",
+      classificationResult: "Դասակարգման Արդյունք՝",
+      copy: "Պատճենել",
+      download: "Ներբեռնել",
+      filenameTitle: "Մուտքագրեք Ֆայլի Անունը",
+      filenamePlaceholder: "ամփոփագիր.txt",
+      saveButton: "Պահպանել",
+      summaryResultText: "Ահա ձեր վերբեռնված PDF ֆայլի ամփոփագիրը։",
+      article: "Հոդված",
+      none: "Չկա",
+      copied: "Ամփոփումը պատճենվել է սեղմատախտակին!"
+    },
+    ru: {
+      mainTitle: "Инструмент Суммирования",
+      infoText: "Этот инструмент суммирует PDF файлы на армянском, английском и русском языках. Сгенерированный текст будет на том же языке, что и загруженный документ.",
+      uploadLabel: "Загрузить PDF:",
+      uploadInstruction: "Перетащите сюда ваш PDF или",
+      browse: "Выберите",
+      classification: "Включить Классификацию",
+      summarize: "Суммировать",
+      summaryResult: "Результат Суммирования:",
+      classificationResult: "Результат Классификации:",
+      copy: "Копировать",
+      download: "Скачать",
+      filenameTitle: "Введите Название Файла",
+      filenamePlaceholder: "конспект.txt",
+      saveButton: "Сохранить",
+      summaryResultText: "Вот краткое содержание загруженного PDF.",
+      article: "Статья",
+      none: "Нет",
+      copied: "Конспект скопирован в буфер обмена!"
+    }
+  };
+
+  let currentLanguage = 'en';
+  document.querySelector(`#languageSwitcher button[onclick="setLanguage('en')"]`).classList.add('active');
+
+  function setLanguage(lang) {
+    currentLanguage = lang;
+
+    document.getElementById('mainTitle').innerText = translations[lang].mainTitle;
+    document.getElementById('infoText').innerText = translations[lang].infoText;
+    document.getElementById('uploadLabel').innerText = translations[lang].uploadLabel;
+    document.getElementById('uploadInstruction').innerText = translations[lang].uploadInstruction;
+    document.getElementById('browseLabel').innerText = translations[lang].browse;
+    document.getElementById('classificationLabel').innerText = translations[lang].classification;
+    document.getElementById('summarizeButton').innerText = translations[lang].summarize;
+    document.getElementById('summaryLabel').innerText = translations[lang].summaryResult;
+    document.getElementById('classificationResultLabel').innerText = translations[lang].classificationResult;
+    document.getElementById('copyButton').innerText = translations[lang].copy;
+    document.getElementById('downloadButton').innerText = translations[lang].download;
+    document.getElementById('filenameModalTitle').innerText = translations[lang].filenameTitle;
+    document.getElementById('filenameInput').placeholder = translations[lang].filenamePlaceholder;
+    document.getElementById('saveButton').innerText = translations[lang].saveButton;
+    
+    const buttons = document.querySelectorAll('#languageSwitcher button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`#languageSwitcher button[onclick="setLanguage('${lang}')"]`).classList.add('active');
+  }
+
+  async function summarize() {
+    const fileInput = document.getElementById('fileInput');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert(translations[currentLanguage].noFileSelected);
+        return;
+    }
+
+    const spinner = document.getElementById('spinner');
+    const resultDiv = document.getElementById('result');
+    const classificationResultDiv = document.getElementById('classificationResult');
+    const classificationEnabled = document.getElementById('classificationCheck').checked;
+
+    spinner.style.display = 'block';
+    resultDiv.innerText = '';
+    classificationResultDiv.innerText = '';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('classification', classificationEnabled);
+        formData.append('language', currentLanguage); 
+
+        const response = await fetch('/summarize', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const data = await response.json();
+        resultDiv.innerText = data.summary;
+        classificationResultDiv.innerText = data.classification || translations[currentLanguage].none;
+        
+        downloadTextContent = data.summary;
+        
+    } catch (error) {
+        console.error('Error:', error);
+        resultDiv.innerText = translations[currentLanguage].error + ': ' + error.message;
+    } finally {
+        spinner.style.display = 'none';
+    }
+  }
+
+  translations.en.noFileSelected = "Please select a PDF file first";
+  translations.en.error = "Error";
+  
+  translations.hy.noFileSelected = "Խնդրում ենք նախ ընտրել PDF ֆայլ";
+  translations.hy.error = "Սխալ";
+  
+  translations.ru.noFileSelected = "Пожалуйста, сначала выберите PDF файл";
+  translations.ru.error = "Ошибка";
+
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    if (this.files && this.files[0]) {
+        const fileInfo = document.getElementById('fileInfo');
+        document.getElementById('fileName').textContent = this.files[0].name;
+        fileInfo.style.display = 'block';
+    }
+  });
+
+  document.getElementById('removeFile').addEventListener('click', function() {
+    const fileInput = document.getElementById('fileInput');
+    fileInput.value = '';
+    document.getElementById('fileInfo').style.display = 'none';
+    document.getElementById('result').innerText = '';
+    document.getElementById('classificationResult').innerText = '';
+  });
+</script>
+
+</body>
+</html>
